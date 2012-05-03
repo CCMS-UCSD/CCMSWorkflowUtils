@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>ccms</groupId>
+	<artifactId>workflow-utils</artifactId>
+	<name>CCMS Workflow Utilities</name>
+	<packaging>jar</packaging>
+	<version>1.0</version>
+	<properties>
+		<my.type></my.type>
+		<my.name></my.name>
+	</properties>
+	<repositories>
+		<repository>
+			<id>internal</id>
+			<name>Maven 2 Internal Repository</name>
+			<url>http://proteomics1.ucsd.edu/maven</url>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>Maven Snapshots</id>
+			<url>http://snapshots.maven.codehaus.org/maven2/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+	<build>
+		<finalName>CCMSWorkflowUtils</finalName>
+		<plugins>
+			<plugin>
+				<inherited>true</inherited>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin> 
+				<groupId>org.apache.maven.plugins</groupId> 
+				<artifactId>maven-jar-plugin</artifactId> 
+				<configuration> 
+					<archive> 
+						<manifest> 
+							<addClasspath>true</addClasspath> 
+							<mainClass>edu.ucsd.workflow.WorkflowUtils</mainClass> 
+						</manifest> 
+					</archive> 
+				</configuration> 
+			</plugin> 
+			<plugin> 
+				<artifactId>maven-dependency-plugin</artifactId> 
+				<executions> 
+					<execution> 
+						<id>unpack-dependencies</id> 
+						<phase>generate-resources</phase> 
+						<goals> 
+							<goal>unpack-dependencies</goal> 
+						</goals> 
+				</execution> 
+				</executions> 
+			</plugin>
+		</plugins>
+		<resources>
+			<!-- to enable maven profile -->
+			<resource>
+				<directory>src/main/resources</directory>				
+				<filtering>true</filtering>
+			</resource>
+			<!-- to make dependencies available to built JAR -->
+			<resource> 
+				<directory>${basedir}/target/dependency</directory> 
+			</resource>
+		</resources>
+	</build>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.5.8</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>RELEASE</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>xalan</groupId>
+			<artifactId>xalan</artifactId>
+			<version>2.7.1</version>
+		</dependency>
+		<dependency>
+			<groupId>stax</groupId>
+			<artifactId>stax</artifactId>
+			<version>1.2.0</version>
+		</dependency>
+	</dependencies>
+</project>
