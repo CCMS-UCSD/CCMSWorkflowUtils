@@ -15,7 +15,7 @@ public class ShuffleFASTA
 	 * Constants
 	 *========================================================================*/
 	private static final String USAGE = "java -jar CCMSWorkflowUtils.jar" +
-		"\n\t-tool reverseFasta" +
+		"\n\t-tool shuffleFasta" +
 		"\n\t-input <FastaFile>" +
 		"\n\t-output <OutputFile>";
 	private static final String DECOY_PREFIX = "XXX";

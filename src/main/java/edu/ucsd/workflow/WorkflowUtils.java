@@ -17,8 +17,8 @@ public class WorkflowUtils
 	private static final String NO_TOOL =
 		"Please indicate a valid tool to invoke.";
 	public static enum Tool {
-		MERGE, SELECTFIRST, SHUFFLEFASTA,
-		MODACONFIG, XTANDEMCONFIG, XTANDEMRESULTPARSER;
+		MERGE, FILTERCOLLECTION, SELECTFIRST, SHUFFLEFASTA,
+		XTANDEMCONFIG, XTANDEMRESULTPARSER;
 		public String toString() {
 			return this.name().toLowerCase();
 		}
@@ -41,14 +41,14 @@ public class WorkflowUtils
 			case MERGE:
 				Merge.main(args);
 				break;
+			case FILTERCOLLECTION:
+				FilterCollection.main(args);
+				break;
 			case SELECTFIRST:
 				SelectFirst.main(args);
 				break;
 			case SHUFFLEFASTA:
 				ShuffleFASTA.main(args);
-				break;
-			case MODACONFIG:
-				MODaConfigGenerator.main(args);
 				break;
 			case XTANDEMCONFIG:
 				XTandemConfigGenerator.main(args);
