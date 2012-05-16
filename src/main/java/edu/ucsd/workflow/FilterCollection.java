@@ -180,7 +180,7 @@ public class FilterCollection
 	
 	private static void die(String message, Throwable error) {
 		if (message == null)
-			message = "There was an error merging workflow output files";
+			message = "There was an error filtering files from a collection";
 		if (error == null)
 			message += ".";
 		else message += ":";
