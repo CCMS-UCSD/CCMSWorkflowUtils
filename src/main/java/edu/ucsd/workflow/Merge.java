@@ -31,6 +31,13 @@ public class Merge
 			// set up output file writer
 			output = new PrintWriter(merge.outputFile);
 			boolean first = true;
+			System.out.println(String.format(
+				"Merging the contents of input directory \"%s\"\n" +
+				"into output file \"%s\":",
+				merge.inputDirectory.getAbsolutePath(),
+				merge.outputFile.getAbsolutePath()));
+			int filesMerged = 0;
+			long totalFileSize = 0L;
 			for (File inputFile : merge.inputDirectory.listFiles()) {
 				if (inputFile.isDirectory())
 					continue;
@@ -38,6 +45,10 @@ public class Merge
 					throw new IOException(String.format(
 						"Input file \"%s\" is not readable.",
 						inputFile.getAbsolutePath()));
+				System.out.print(String.format(
+					"\t%3d. Input file \"%s\" - size %,d bytes...",
+					(filesMerged + 1), inputFile.getName(),
+					inputFile.length()));
 				input = new RandomAccessFile(inputFile, "r");
 				// read the first line, and if it's expected
 				// to be a header, handle it appropriately
@@ -55,7 +66,30 @@ public class Merge
 				input.close();
 				if (first)
 					first = false;
+				// report success
+				filesMerged++;
+				totalFileSize += inputFile.length();
+				System.out.println("merged.");
 			}
+			// flush the output stream and report the result of the merge
+			output.flush();
+			StringBuffer report = new StringBuffer("Merged ");
+			report.append(filesMerged);
+			report.append(" input file");
+			if (filesMerged != 1)
+				report.append("s");
+			report.append(" into result file \"");
+			report.append(merge.outputFile.getAbsolutePath());
+			report.append("\".\nAfter merging, this file contains ");
+			report.append(String.format("%,d", merge.outputFile.length()));
+			report.append(" bytes of data.");
+			if (merge.outputFile.length() != totalFileSize) {
+				report.append(
+					"\nWARNING: Expected the result file to contain ");
+				report.append(String.format("%,d", totalFileSize));
+				report.append(" bytes!");
+			}
+			System.out.println(report.toString());
 		} catch (Throwable error) {
 			die(null, error);
 		} finally {
