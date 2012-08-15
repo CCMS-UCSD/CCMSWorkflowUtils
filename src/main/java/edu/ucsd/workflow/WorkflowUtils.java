@@ -17,7 +17,8 @@ public class WorkflowUtils
 	private static final String NO_TOOL =
 		"Please indicate a valid tool to invoke.";
 	public static enum Tool {
-		MERGE, COPYCOLLECTION, FILTERCOLLECTION, SELECTFIRST, SHUFFLEFASTA;
+		MERGE, JOINTABLES, COPYCOLLECTION, FILTERCOLLECTION, SELECTFIRST,
+		SHUFFLEFASTA;
 		public String toString() {
 			return this.name().toLowerCase();
 		}
@@ -39,6 +40,9 @@ public class WorkflowUtils
 		switch (tool) {
 			case MERGE:
 				Merge.main(args);
+				break;
+			case JOINTABLES:
+				JoinTables.main(args);
 				break;
 			case COPYCOLLECTION:
 				CopyCollection.main(args);
