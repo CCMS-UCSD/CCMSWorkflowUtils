@@ -18,7 +18,7 @@ public class WorkflowUtils
 		"Please indicate a valid tool to invoke.";
 	public static enum Tool {
 		MERGE, JOINTABLES, COPYCOLLECTION, FILTERCOLLECTION, SELECTFIRST,
-		SHUFFLEFASTA;
+		SHUFFLEFASTA, MERGEPEPNOVO;
 		public String toString() {
 			return this.name().toLowerCase();
 		}
@@ -55,6 +55,9 @@ public class WorkflowUtils
 				break;
 			case SHUFFLEFASTA:
 				ShuffleFASTA.main(args);
+				break;
+			case MERGEPEPNOVO:
+				MergePepNovo.main(args);
 				break;
 			default:
 				System.err.println(String.format(BAD_TOOL, tool.toString()));
