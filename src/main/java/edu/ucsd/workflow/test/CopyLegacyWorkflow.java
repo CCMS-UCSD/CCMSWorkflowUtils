@@ -77,15 +77,15 @@ public class CopyLegacyWorkflow
 				if (passed) {
 					File destination = new File(
 						task, "workflow/" + copy.specificationFile.getName());
-//					try {
-//						FileUtils.copyFile(copy.specificationFile, destination);
-//					} catch (Throwable error) {
-//						die(String.format("There was an error copying " +
-//							"legacy workflow specification file \"%s\" to " +
-//							"task directory destination \"%s\"",
-//							copy.specificationFile.getAbsolutePath(),
-//							destination.getAbsolutePath()), error);
-//					}
+					try {
+						FileUtils.copyFile(copy.specificationFile, destination);
+					} catch (Throwable error) {
+						die(String.format("There was an error copying " +
+							"legacy workflow specification file \"%s\" to " +
+							"task directory destination \"%s\"",
+							copy.specificationFile.getAbsolutePath(),
+							destination.getAbsolutePath()), error);
+					}
 					System.out.println(String.format("Copied to \"%s\"",
 						destination.getAbsolutePath()));
 				}
