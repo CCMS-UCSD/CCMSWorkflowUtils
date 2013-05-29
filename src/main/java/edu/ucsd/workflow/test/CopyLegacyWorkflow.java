@@ -67,7 +67,7 @@ public class CopyLegacyWorkflow
 					// this query fails if this task doesn't have a parameter
 					// value matching each element of the query
 					if (values == null || values.isEmpty() ||
-						values.contains(copy.query.get(key))) {
+						values.contains(copy.query.get(key)) == false) {
 						passed = false;
 						break;
 					}
