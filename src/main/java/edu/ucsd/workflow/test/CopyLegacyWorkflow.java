@@ -18,9 +18,11 @@ public class CopyLegacyWorkflow
 	 *========================================================================*/
 	private static final String USAGE = "java -cp CCMSWorkflowUtils.jar " +
 		"edu.ucsd.workflow.test.CopyLegacyWorkflow" +
-		"\n\t-file  <LegacyWorkflowSpecificationFile>" +
-		"\n\t-query <WorkflowParameterQueryString>";
-	private static final File TASK_SPACE = new File("/data/ccms-data/tasks");
+		"\n\t-file   <LegacyWorkflowSpecificationFile>" +
+		"\n\t-query  <WorkflowParameterQueryString>" +
+		"\n\t[-tasks <PathToTaskSpace>]";
+	private static final File DEFAULT_TASK_SPACE =
+		new File("/data/ccms-data/tasks");
 	
 	/*========================================================================
 	 * Public interface methods
@@ -29,19 +31,6 @@ public class CopyLegacyWorkflow
 		CopyLegacyWorkflowOperation copy = extractArguments(args);
 		if (copy == null)
 			die(USAGE);
-		// verify task space directory
-		if (TASK_SPACE.exists() == false)
-			die(String.format("Task space directory \"%s\" does not exist",
-				TASK_SPACE.getAbsolutePath()));
-		else if (TASK_SPACE.isDirectory() == false)
-			die(String.format("Task space directory \"%s\" is not " +
-				"a valid directory", TASK_SPACE.getAbsolutePath()));
-		else if (TASK_SPACE.canRead() == false)
-			die(String.format("Task space directory \"%s\" cannot be read",
-				TASK_SPACE.getAbsolutePath()));
-		else if (TASK_SPACE.canWrite() == false)
-			die(String.format("Task space directory \"%s\" cannot be written",
-				TASK_SPACE.getAbsolutePath()));
 		// report query operation
 		System.out.println(String.format("Copying legacy workflow " +
 			"specification file \"%s\" to all tasks matching the following " +
@@ -50,7 +39,7 @@ public class CopyLegacyWorkflow
 			System.out.println(String.format("    %s = %s",
 				key, copy.query.get(key)));
 		// traverse task space directory
-		for (File user : TASK_SPACE.listFiles()) {
+		for (File user : copy.taskSpace.listFiles()) {
 			// only process valid task directories
 			if (user == null || user.isDirectory() == false ||
 				user.canRead() == false || user.canWrite() == false)
@@ -114,6 +103,7 @@ public class CopyLegacyWorkflow
 		/*====================================================================
 		 * Properties
 		 *====================================================================*/
+		private File taskSpace;
 		private File specificationFile;
 		private Map<String, String> query;
 		
@@ -121,8 +111,24 @@ public class CopyLegacyWorkflow
 		 * Constructors
 		 *====================================================================*/
 		public CopyLegacyWorkflowOperation(
-			File specificationFile, String queryString
+			File taskSpace, File specificationFile, String queryString
 		) throws IOException {
+			// verify task space
+			if (taskSpace != null)
+				this.taskSpace = taskSpace;
+			else this.taskSpace = DEFAULT_TASK_SPACE;
+			if (this.taskSpace.isDirectory() == false)
+				throw new IllegalArgumentException(
+					String.format("Task space \"%s\" must be a directory.",
+						this.taskSpace.getAbsolutePath()));
+			else if (this.taskSpace.canRead() == false)
+				throw new IllegalArgumentException(
+					String.format("Task space \"%s\" must be readable.",
+						this.taskSpace.getAbsolutePath()));
+			else if (this.taskSpace.canWrite() == false)
+				throw new IllegalArgumentException(
+					String.format("Task space \"%s\" must be writable.",
+						this.taskSpace.getAbsolutePath()));
 			// validate specification file to be copied into legacy tasks
 			if (specificationFile == null)
 				throw new NullPointerException(
@@ -160,6 +166,7 @@ public class CopyLegacyWorkflow
 	private static CopyLegacyWorkflowOperation extractArguments(String[] args) {
 		if (args == null || args.length < 1)
 			return null;
+		File taskSpace = null;
 		File specificationFile = null;
 		String query = null;
 		for (int i=0; i<args.length; i++) {
@@ -171,7 +178,9 @@ public class CopyLegacyWorkflow
 				if (i >= args.length)
 					return null;
 				String value = args[i];
-				if (argument.equals("-file"))
+				if (argument.equals("-tasks"))
+					taskSpace = new File(value);
+				else if (argument.equals("-file"))
 					specificationFile = new File(value);
 				else if (argument.equals("-query"))
 					query = value;
@@ -179,7 +188,8 @@ public class CopyLegacyWorkflow
 			}
 		}
 		try {
-			return new CopyLegacyWorkflowOperation(specificationFile, query);
+			return new CopyLegacyWorkflowOperation(
+				taskSpace, specificationFile, query);
 		} catch (Throwable error) {
 			System.err.println(error.getMessage());
 			return null;
