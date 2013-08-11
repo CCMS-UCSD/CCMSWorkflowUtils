@@ -128,8 +128,10 @@ public class MergePepNovo
 							break;
 						linesRead++;
 						// the second header should be a comment, starting
-						// with "#"; otherwise, it's an invalid block
-						if (line.startsWith("#") == false) {
+						// with "#", and it should match the native header
+						// string; otherwise, it's an invalid block
+						if (line.startsWith("#") == false ||
+							line.equals(nativeHeader.toString()) == false) {
 							System.out.println(String.format("Warning [" +
 								"PepNovo result file \"%s\", line %d]: " +
 								"expected a valid block field sub-header " +
@@ -138,14 +140,6 @@ public class MergePepNovo
 								nativeHeader.toString(), line));
 							continue;
 						}
-						// verify second header, it should
-						// be a block field sub-header
-						else if (line.equals(nativeHeader.toString()) == false)
-							die(String.format("Error [PepNovo result file " +
-								"\"%s\", line %d]: expected a valid block " +
-								"field sub-header (\"%s\"), but found line " +
-								"\"%s\" instead", result.getAbsolutePath(),
-								linesRead, nativeHeader.toString(), line));
 						// parse out each PSM line from this block
 						while ((line = reader.readLine()) != null) {
 							linesRead++;
