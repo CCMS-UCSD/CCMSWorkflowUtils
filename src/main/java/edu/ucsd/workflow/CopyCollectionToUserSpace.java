@@ -124,11 +124,11 @@ public class CopyCollectionToUserSpace
 			else if (sourceDirectory.isDirectory() == false)
 				throw new IllegalArgumentException(String.format(
 					"Source directory [%s] must be a directory.",
-					sourceDirectory.getName()));
+					sourceDirectory.getAbsolutePath()));
 			else if (sourceDirectory.canRead() == false)
 				throw new IllegalArgumentException(String.format(
 					"Source directory [%s] must be readable.",
-					sourceDirectory.getName()));
+					sourceDirectory.getAbsolutePath()));
 			this.sourceDirectory = sourceDirectory;
 			// validate user space root directory
 			if (userSpaceRoot == null)
@@ -137,25 +137,29 @@ public class CopyCollectionToUserSpace
 			else if (userSpaceRoot.isDirectory() == false)
 				throw new IllegalArgumentException(String.format(
 					"User space root directory [%s] must be a directory.",
-					userSpaceRoot.getName()));
+					userSpaceRoot.getAbsolutePath()));
 			// generate actual workflow output copy destination for this user
 			File userRoot = new File(userSpaceRoot, user);
 			if (userRoot.isDirectory() == false)
 				throw new IllegalArgumentException(String.format(
 					"User root directory [%s] must be a directory.",
-					userRoot.getName()));
+					userRoot.getAbsolutePath()));
 			destinationDirectory =
 				new File(userRoot, WORKFLOW_OUTPUT_COPY_DIRECTORY);
 			// ensure that destination directory exists
-			destinationDirectory.mkdirs();
+			try {
+				destinationDirectory.mkdirs();
+			} catch (Throwable error) {
+				throw new RuntimeException(error);
+			}
 			if (destinationDirectory.isDirectory() == false)
 				throw new IllegalArgumentException(String.format(
 					"Workflow output copy directory [%s] must be a directory.",
-					destinationDirectory.getName()));
+					destinationDirectory.getAbsolutePath()));
 			else if (destinationDirectory.canWrite() == false)
 				throw new IllegalArgumentException(String.format(
 					"Workflow output copy directory [%s] must be writable.",
-					destinationDirectory.getName()));
+					destinationDirectory.getAbsolutePath()));
 		}
 	}
 	
