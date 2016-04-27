@@ -119,7 +119,7 @@ public class AnalyzeFile
 					fileDetails, checksum, hash);
 			} else return fileDetails;
 		} else if (file.isDirectory()) {
-			StringBuffer contents = new StringBuffer(file.getPath());
+			StringBuilder contents = new StringBuilder(file.getPath());
 			// render down arrow for directories, to be nifty
 			contents.append(" ").append(Character.toChars(8628)).append("\n");
 			// be sure to indent properly for each level
@@ -128,9 +128,13 @@ public class AnalyzeFile
 				thisPrefix = prefix;
 				nextPrefix = prefix + stats.prefix;
 			}
-			for (File child : file.listFiles()) {
-				contents.append(thisPrefix);
-				contents.append(analyze(stats, child, nextPrefix)).append("\n");
+			File[] children = file.listFiles();
+			if (children != null && children.length > 0) {
+				for (File child : file.listFiles()) {
+					contents.append(thisPrefix);
+					contents.append(analyze(stats, child, nextPrefix));
+					contents.append("\n");
+				}
 			}
 			// chomp trailing newline
 			if (contents.toString().endsWith("\n"))
