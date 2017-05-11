@@ -1,9 +1,10 @@
 package edu.ucsd.workflow;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 
 public class Merge
 {
@@ -25,7 +26,7 @@ public class Merge
 		if (merge == null)
 			die(USAGE);
 		// read all files in the input directory, and merge their contents
-		RandomAccessFile input = null;
+		BufferedReader input = null;
 		PrintWriter output = null;
 		try {
 			// set up output file writer
@@ -49,7 +50,7 @@ public class Merge
 					"\t%3d. Input file \"%s\" - size %,d bytes...",
 					(filesMerged + 1), inputFile.getName(),
 					inputFile.length()));
-				input = new RandomAccessFile(inputFile, "r");
+				input = new BufferedReader(new FileReader(inputFile));
 				// read the first line, and if it's expected
 				// to be a header, handle it appropriately
 				String line = input.readLine();
