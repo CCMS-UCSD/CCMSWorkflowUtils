@@ -1,9 +1,10 @@
 package edu.ucsd.workflow;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,13 +31,13 @@ public class JoinTables
 		if (join == null)
 			die(USAGE);
 		// set up file I/O objects
-		RandomAccessFile input1 = null;
-		RandomAccessFile input2 = null;
+		BufferedReader input1 = null;
+		BufferedReader input2 = null;
 		PrintWriter output = null;
 		try {
 			// analyze input files
-			input1 = new RandomAccessFile(join.inputFile1, "r");
-			input2 = new RandomAccessFile(join.inputFile2, "r");
+			input1 = new BufferedReader(new FileReader(join.inputFile1));
+			input2 = new BufferedReader(new FileReader(join.inputFile2));
 			// capture column headers
 			List<String> fields1 = Arrays.asList(
 				input1.readLine().split(join.delimiter));

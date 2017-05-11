@@ -1,11 +1,12 @@
 package edu.ucsd.workflow;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 
 import edu.ucsd.util.FileIOUtils;
 
@@ -28,14 +29,14 @@ public class ShuffleFASTA
 		if (shuffle == null)
 			die(USAGE);
 		// read input file, reverse FASTA sequences and write to output file
-		RandomAccessFile input = null;
+		BufferedReader input = null;
 		PrintWriter output = null;
 		try {
 			// first copy the contents of the input file to the output file
 			if (FileIOUtils.copyFile(shuffle.input, shuffle.output) == false)
 				die("Error copying contents of input FASTA file");
 			// set up input file reader
-			input = new RandomAccessFile(shuffle.input, "r");
+			input = new BufferedReader(new FileReader(shuffle.input));
 			// set up output file writer
 			output = new PrintWriter(
 				new BufferedWriter(new FileWriter(shuffle.output, true)));
