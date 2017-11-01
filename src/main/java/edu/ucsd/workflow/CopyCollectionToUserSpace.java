@@ -192,7 +192,7 @@ public class CopyCollectionToUserSpace
 		}
 		try {
 			return new UserSpaceCopyOperation(
-				parameters, sourceDirectory, userSpaceRoot);
+				sourceDirectory, userSpaceRoot, parameters);
 		} catch (Throwable error) {
 			System.err.println(error.getMessage());
 			return null;
