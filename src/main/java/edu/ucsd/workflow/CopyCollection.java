@@ -2,19 +2,32 @@ package edu.ucsd.workflow;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.xpath.XPathAPI;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+import edu.ucsd.util.CommonUtils;
+import edu.ucsd.util.FileIOUtils;
 
 public class CopyCollection
 {
 	/*========================================================================
 	 * Constants
 	 *========================================================================*/
-	private static final String USAGE = "java -jar CCMSWorkflowUtils.jar" +
-		"\n\t-tool copyCollection" +
-		"\n\t-collection <CollectionName>" +
-		"\n\t-source <SourceDirectory>" +
-		"\n\t-destination <DestinationDirectory>";
+	private static final String USAGE =
+		"java -cp CCMSWorkflowUtils.jar edu.ucsd.workflow.CopyCollection " +
+		"\n\t-collection     <CollectionName>" +
+		"\n\t-source         <SourceDirectory>" +
+		"\n\t-destination    <DestinationDirectory>" +
+		"\n\t[-preservePaths true/false (default false; " +
+			"if specified, source files will be un-flattened by consulting " +
+			"params.xml mappings before being copied to the destination)]" +
+		"\n\t[-params        <ProteoSAFeParametersFile> " +
+			"(if \"-preservePaths\" is set to true)]";
 	
 	/*========================================================================
 	 * Public interface methods
@@ -23,11 +36,21 @@ public class CopyCollection
 		CopyCollectionOperation copy = extractArguments(args);
 		if (copy == null)
 			die(USAGE);
-		// copy the named collection subdirectory from the
-		// source directory to the destination directory
 		try {
-			FileUtils.copyDirectory(
-				copy.sourceDirectory, copy.destinationDirectory);
+			// if paths are not to be preserved, simply copy
+			// the named collection subdirectory from the
+			// source directory to the destination directory
+			if (copy.preservePaths == false)
+				FileUtils.copyDirectory(
+					copy.sourceDirectory, copy.destinationDirectory);
+			// otherwise, copy each file from the source directory to the
+			// destination directory, preserving original file paths
+			else for (File source : copy.sourceDirectory.listFiles()) {
+				String path =
+					FileIOUtils.getMappedPath(source.getName(), copy.filenames);
+				File destination = new File(copy.destinationDirectory, path);
+				FileUtils.copyFile(source, destination);
+			}
 		} catch (Throwable error) {
 			die(null, error);
 		}
@@ -43,14 +66,17 @@ public class CopyCollection
 		/*====================================================================
 		 * Properties
 		 *====================================================================*/
-		private File sourceDirectory;
-		private File destinationDirectory;
+		private Map<String, String> filenames;
+		private File                sourceDirectory;
+		private File                destinationDirectory;
+		private boolean             preservePaths;
 		
 		/*====================================================================
 		 * Constructors
 		 *====================================================================*/
 		public CopyCollectionOperation(
-			String collection, File sourceDirectory, File destinationDirectory
+			String collection, File sourceDirectory, File destinationDirectory,
+			Boolean preservePaths, File parameters
 		) throws IOException {
 			// validate source directory
 			if (collection == null)
@@ -81,6 +107,57 @@ public class CopyCollection
 			this.destinationDirectory = destinationDirectory;
 			// ensure that destination directory exists
 			this.destinationDirectory.mkdirs();
+			// set path preservation flag, if present (default false)
+			if (preservePaths == null)
+				this.preservePaths = false;
+			else this.preservePaths = preservePaths;
+			// if paths are to be preserved, consult
+			// parameters for file mappings
+			if (this.preservePaths) {
+				// validate XML parameters file
+				if (parameters == null)
+					throw new NullPointerException(
+						"Parameters file must be provided if " +
+						"\"-preservePaths\" is set to true.");
+				else if (parameters.isFile() == false)
+					throw new IllegalArgumentException(String.format(
+						"Parameters file [%s] must be a regular file.",
+						parameters.getName()));
+				else if (parameters.canRead() == false)
+					throw new IllegalArgumentException(String.format(
+						"Parameters file [%s] must be readable.",
+						parameters.getName()));
+				// read XML document from params file
+				Document document = FileIOUtils.parseXML(parameters);
+				if (document == null)
+					throw new NullPointerException(
+						"Parameters XML document could not be parsed.");
+				// generate mappings for all submitted filenames
+				try {
+					NodeList mappings = XPathAPI.selectNodeList(
+						document, "//parameter[@name='upload_file_mapping']");
+					filenames =
+						new LinkedHashMap<String, String>(mappings.getLength());
+					if (mappings != null && mappings.getLength() > 0) {
+						for (int i=0; i<mappings.getLength(); i++) {
+							String value =
+								mappings.item(i).getFirstChild().getNodeValue();
+							String[] tokens = value.split("\\|");
+							if (tokens == null || tokens.length != 2)
+								throw new IllegalArgumentException(
+									String.format("\"upload_file_mapping\" " +
+									"parameter value \"%s\" is invalid - it " +
+									"should contain two tokens separated by " +
+									"a pipe (\"|\") character.", value));
+							filenames.put(tokens[0], tokens[1]);
+						}
+					}
+				} catch (RuntimeException error) {
+					throw error;
+				} catch (Throwable error) {
+					throw new RuntimeException(error);
+				}
+			} else filenames = null;
 		}
 	}
 	
@@ -93,6 +170,8 @@ public class CopyCollection
 		String collection = null;
 		File sourceDirectory = null;
 		File destinationDirectory = null;
+		Boolean preservePaths = null;
+		File parameters = null;
 		for (int i=0; i<args.length; i++) {
 			String argument = args[i];
 			if (argument == null)
@@ -108,12 +187,21 @@ public class CopyCollection
 					sourceDirectory = new File(value);
 				else if (argument.equals("-destination"))
 					destinationDirectory = new File(value);
+				else if (argument.equals("-preservePaths")) {
+					preservePaths = CommonUtils.parseBooleanColumn(value);
+					if (preservePaths == null)
+						throw new IllegalArgumentException(String.format(
+							"Unrecognized value for \"-preservePaths\": [%s]",
+							value));
+				} else if (argument.equals("-params"))
+					parameters = new File(value);
 				else return null;
 			}
 		}
 		try {
 			return new CopyCollectionOperation(
-				collection, sourceDirectory, destinationDirectory);
+				collection, sourceDirectory, destinationDirectory,
+				preservePaths, parameters);
 		} catch (Throwable error) {
 			System.err.println(error.getMessage());
 			return null;

@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -21,6 +22,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.io.FilenameUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -167,5 +169,45 @@ public class FileIOUtils
 			}
 			return result.getWriter().toString();
 		}
+	}
+	
+	public static final String getMappedPath(
+		String filename, Map<String, String> filenames
+	) {
+		if (filename == null)
+			return null;
+		else if (filenames == null || filenames.isEmpty())
+			return filename;
+		// first try to find a literal match for the filename in the map
+		String path = filenames.get(filename);
+		// if no literal match was found, compare filename bases
+		if (path == null) {
+			String baseFilename = FilenameUtils.getBaseName(filename);
+			String extension = FilenameUtils.getExtension(filename);
+			for (String mapped : filenames.keySet()) {
+				if (baseFilename.equals(FilenameUtils.getBaseName(mapped))) {
+					path = changeExtension(filenames.get(mapped), extension);
+					break;
+				}
+			}
+		}
+		// if no good match was found, return the original filename
+		if (path == null)
+			return filename;
+		else return path;
+	}
+	
+	public static final String changeExtension(
+		String filename, String extension
+	) {
+		if (filename == null)
+			return null;
+		// if the new extension is null, then just remove the extension
+		else if (extension == null)
+			return String.format("%s%s", FilenameUtils.getPath(filename),
+				FilenameUtils.getBaseName(filename));
+		// otherwise change the old extension to the new one
+		else return String.format("%s%s.%s", FilenameUtils.getPath(filename),
+			FilenameUtils.getBaseName(filename), extension);
 	}
 }

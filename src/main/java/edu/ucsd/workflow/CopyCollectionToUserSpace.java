@@ -6,7 +6,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -19,11 +18,11 @@ public class CopyCollectionToUserSpace
 	/*========================================================================
 	 * Constants
 	 *========================================================================*/
-	private static final String USAGE = "java -jar CCMSWorkflowUtils.jar" +
-		"\n\t-tool   copyCollectionToUserSpace" +
-		"\n\t-params <ProteoSAFeParametersFile>" +
+	private static final String USAGE = "java -cp CCMSWorkflowUtils.jar " +
+		"edu.ucsd.workflow.CopyCollectionToUserSpace " +
 		"\n\t-source <SourceDirectory>" +
-		"\n\t-root   <UserSpaceRootDirectory>";
+		"\n\t-root   <UserSpaceRootDirectory>" +
+		"\n\t-params <ProteoSAFeParametersFile>";
 	private static final String WORKFLOW_OUTPUT_COPY_DIRECTORY = "ccms_output";
 	
 	/*========================================================================
@@ -37,7 +36,8 @@ public class CopyCollectionToUserSpace
 		// to the destination directory, preserving original file paths
 		try {
 			for (File source : copy.sourceDirectory.listFiles()) {
-				String path = getMappedPath(source.getName(), copy.filenames);
+				String path =
+					FileIOUtils.getMappedPath(source.getName(), copy.filenames);
 				File destination = new File(copy.destinationDirectory, path);
 				FileUtils.copyFile(source, destination);
 			}
@@ -65,7 +65,7 @@ public class CopyCollectionToUserSpace
 		 * Constructors
 		 *====================================================================*/
 		public UserSpaceCopyOperation(
-			File parameters, File sourceDirectory, File userSpaceRoot
+			File sourceDirectory, File userSpaceRoot, File parameters
 		) throws IOException {
 			// validate XML parameters file
 			if (parameters == null)
@@ -169,9 +169,9 @@ public class CopyCollectionToUserSpace
 	private static UserSpaceCopyOperation extractArguments(String[] args) {
 		if (args == null || args.length < 1)
 			return null;
-		File parameters = null;
 		File sourceDirectory = null;
 		File userSpaceRoot = null;
+		File parameters = null;
 		for (int i=0; i<args.length; i++) {
 			String argument = args[i];
 			if (argument == null)
@@ -181,12 +181,12 @@ public class CopyCollectionToUserSpace
 				if (i >= args.length)
 					return null;
 				String value = args[i];
-				if (argument.equals("-params"))
-					parameters = new File(value);
-				else if (argument.equals("-source"))
+				if (argument.equals("-source"))
 					sourceDirectory = new File(value);
 				else if (argument.equals("-root"))
 					userSpaceRoot = new File(value);
+				else if (argument.equals("-params"))
+					parameters = new File(value);
 				else return null;
 			}
 		}
@@ -197,44 +197,6 @@ public class CopyCollectionToUserSpace
 			System.err.println(error.getMessage());
 			return null;
 		}
-	}
-	
-	private static String getMappedPath(
-		String filename, Map<String, String> filenames
-	) {
-		if (filename == null)
-			return null;
-		else if (filenames == null || filenames.isEmpty())
-			return filename;
-		// first try to find a literal match for the filename in the map
-		String path = filenames.get(filename);
-		// if no literal match was found, compare filename bases
-		if (path == null) {
-			String baseFilename = FilenameUtils.getBaseName(filename);
-			String extension = FilenameUtils.getExtension(filename);
-			for (String mapped : filenames.keySet()) {
-				if (baseFilename.equals(FilenameUtils.getBaseName(mapped))) {
-					path = changeExtension(filenames.get(mapped), extension);
-					break;
-				}
-			}
-		}
-		// if no good match was found, return the original filename
-		if (path == null)
-			return filename;
-		else return path;
-	}
-	
-	private static String changeExtension(String filename, String extension) {
-		if (filename == null)
-			return null;
-		// if the new extension is null, then just remove the extension
-		else if (extension == null)
-			return String.format("%s%s", FilenameUtils.getPath(filename),
-				FilenameUtils.getBaseName(filename));
-		// otherwise change the old extension to the new one
-		else return String.format("%s%s.%s", FilenameUtils.getPath(filename),
-			FilenameUtils.getBaseName(filename), extension);
 	}
 	
 	private static void die(String message) {
