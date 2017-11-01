@@ -20,8 +20,9 @@ public class CopyCollection
 	 *========================================================================*/
 	private static final String USAGE =
 		"java -cp CCMSWorkflowUtils.jar edu.ucsd.workflow.CopyCollection " +
-		"\n\t-collection     <CollectionName>" +
 		"\n\t-source         <SourceDirectory>" +
+		"\n\t[-collection    <CollectionName>" +
+			"(optional subdirectory name under \"-source\")]" +
 		"\n\t-destination    <DestinationDirectory>" +
 		"\n\t[-preservePaths true/false (default false; " +
 			"if specified, source files will be un-flattened by consulting " +
@@ -75,17 +76,15 @@ public class CopyCollection
 		 * Constructors
 		 *====================================================================*/
 		public CopyCollectionOperation(
-			String collection, File sourceDirectory, File destinationDirectory,
+			File sourceDirectory, String collection, File destinationDirectory,
 			Boolean preservePaths, File parameters
 		) throws IOException {
 			// validate source directory
-			if (collection == null)
-				throw new NullPointerException(
-					"Collection name cannot be null.");
-			else if (sourceDirectory == null)
+			if (sourceDirectory == null)
 				throw new NullPointerException(
 					"Source directory cannot be null.");
-			sourceDirectory = new File(sourceDirectory, collection);
+			if (collection != null && collection.trim().isEmpty() == false)
+				sourceDirectory = new File(sourceDirectory, collection);
 			if (sourceDirectory.isDirectory() == false)
 				throw new IllegalArgumentException(
 					String.format("Source directory \"%s\" must be a " +
@@ -167,8 +166,8 @@ public class CopyCollection
 	private static CopyCollectionOperation extractArguments(String[] args) {
 		if (args == null || args.length < 1)
 			return null;
-		String collection = null;
 		File sourceDirectory = null;
+		String collection = null;
 		File destinationDirectory = null;
 		Boolean preservePaths = null;
 		File parameters = null;
@@ -181,10 +180,10 @@ public class CopyCollection
 				if (i >= args.length)
 					return null;
 				String value = args[i];
-				if (argument.equals("-collection"))
-					collection = value;
-				else if (argument.equals("-source"))
+				if (argument.equals("-source"))
 					sourceDirectory = new File(value);
+				else if (argument.equals("-collection"))
+					collection = value;
 				else if (argument.equals("-destination"))
 					destinationDirectory = new File(value);
 				else if (argument.equals("-preservePaths")) {
@@ -200,7 +199,7 @@ public class CopyCollection
 		}
 		try {
 			return new CopyCollectionOperation(
-				collection, sourceDirectory, destinationDirectory,
+				sourceDirectory, collection, destinationDirectory,
 				preservePaths, parameters);
 		} catch (Throwable error) {
 			System.err.println(error.getMessage());
