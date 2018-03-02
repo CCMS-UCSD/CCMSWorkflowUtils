@@ -65,7 +65,7 @@ public class MergeRectangular
 						"Error merging input file [%s]: the file must contain " +
 						"a valid header line consisting of one or more non-empty " +
 						"field names.", inputFile.getAbsolutePath()));
-				for (String column : input.readLine().split(ESCAPED_DELIMITER))
+				for (String column : line.split(ESCAPED_DELIMITER))
 					finalHeader.add(column);
 				input.close();
 				continue;
