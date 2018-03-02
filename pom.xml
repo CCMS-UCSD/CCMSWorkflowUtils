@@ -113,6 +113,11 @@
 			<artifactId>commons-io</artifactId>
 			<version>RELEASE</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.3.2</version>
+		</dependency>
 		<!-- XPath API -->
 		<dependency>
 			<groupId>xalan</groupId>
