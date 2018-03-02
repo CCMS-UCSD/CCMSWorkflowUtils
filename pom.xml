@@ -7,10 +7,9 @@
 	<artifactId>workflow-utils</artifactId>
 	<name>CCMS Workflow Utilities</name>
 	<packaging>jar</packaging>
-	<version>1.0</version>
+	<version>1.1</version>
 	<properties>
-		<my.type></my.type>
-		<my.name></my.name>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<repositories>
 		<repository>
@@ -38,6 +37,7 @@
 				<inherited>true</inherited>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
@@ -45,7 +45,8 @@
 			</plugin>
 			<plugin> 
 				<groupId>org.apache.maven.plugins</groupId> 
-				<artifactId>maven-jar-plugin</artifactId> 
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.2</version>
 				<configuration> 
 					<archive> 
 						<manifest> 
@@ -54,18 +55,36 @@
 						</manifest> 
 					</archive> 
 				</configuration> 
-			</plugin> 
-			<plugin> 
-				<artifactId>maven-dependency-plugin</artifactId> 
-				<executions> 
-					<execution> 
-						<id>unpack-dependencies</id> 
-						<phase>generate-resources</phase> 
-						<goals> 
-							<goal>unpack-dependencies</goal> 
-						</goals> 
-				</execution> 
-				</executions> 
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>2.2.1</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 		<resources>
@@ -82,21 +101,25 @@
 	</build>
 	
 	<dependencies>
+		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
-			<version>1.5.8</version>
+			<version>1.7.5</version>
 		</dependency>
+		<!-- Apache dependencies -->
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>RELEASE</version>
 		</dependency>
+		<!-- XPath API -->
 		<dependency>
 			<groupId>xalan</groupId>
 			<artifactId>xalan</artifactId>
 			<version>2.7.1</version>
 		</dependency>
+		<!-- XML parsing -->
 		<dependency>
 			<groupId>stax</groupId>
 			<artifactId>stax</artifactId>
