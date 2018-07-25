@@ -23,11 +23,21 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import edu.ucsd.saint.commons.Helpers;
+
 public class FileIOUtils
 {
+	/*========================================================================
+	 * Constants
+	 *========================================================================*/
+	private static final Logger logger =
+		LoggerFactory.getLogger(FileIOUtils.class);
+	
 	/*========================================================================
 	 * Public interface methods
 	 *========================================================================*/
@@ -209,5 +219,67 @@ public class FileIOUtils
 		// otherwise change the old extension to the new one
 		else return String.format("%s%s.%s", FilenameUtils.getPath(filename),
 			FilenameUtils.getBaseName(filename), extension);
+	}
+	
+	public static final void sortTSVFile(
+		File inputFile, File outputFile,
+		int sortColumn, boolean header, boolean numericSort, boolean descending
+	) {
+		// validate input TSV file
+		if (inputFile == null)
+			throw new NullPointerException(
+				"Argument TSV file to be sorted is null.");
+		else if (inputFile.canRead() == false)
+			throw new IllegalArgumentException(String.format(
+				"Argument TSV file to be sorted [%s] must be readable.",
+				inputFile.getAbsolutePath()));
+		// validate output sorted file
+		if (outputFile == null)
+			throw new NullPointerException(
+				"Output sorted file cannot be null.");
+		else if (outputFile.isDirectory())
+			throw new IllegalArgumentException(String.format(
+				"Output sorted file [%s] must be a normal " +
+				"(non-directory) file.", outputFile.getAbsolutePath()));
+		// TODO: validate sort column index
+		try {
+			// ensure output file exists; create blank output file if not
+			if (outputFile.exists() == false &&
+				outputFile.createNewFile() == false)
+				throw new RuntimeException(String.format(
+					"Could not create output sorted file [%s].",
+					outputFile.getAbsolutePath()));
+			// build Unix sort command line
+			StringBuilder command = new StringBuilder();
+			String inputPath = inputFile.getAbsolutePath();
+			if (header)
+				command.append("(head -n 1 \"").append(inputPath)
+					.append("\" && tail -n +2 \"").append(inputPath);
+			else command.append("(cat \"").append(inputPath);
+			command.append("\" | sort -t$'\\t' -k").append(sortColumn)
+				.append(",").append(sortColumn);
+			if (numericSort || descending) {
+				command.append(" -");
+				if (numericSort)
+					command.append("g");
+				if (descending)
+					command.append("r");
+			}
+			command.append(") > \"").append(outputFile.getAbsolutePath())
+				.append("\"");
+			logger.info(String.format(
+				"Calling Unix sort: [%s]", command.toString()));
+			ProcessBuilder builder = new ProcessBuilder();
+			builder.command("bash", "-c", command.toString());
+			// set up sort process
+			builder.redirectErrorStream(true);
+			Process process = builder.start();
+			// run and clean up process
+			Helpers.runSimpleProcess(process);
+		} catch (RuntimeException error) {
+			throw error;
+		} catch (Throwable error) {
+			throw new RuntimeException(error);
+		}
 	}
 }
