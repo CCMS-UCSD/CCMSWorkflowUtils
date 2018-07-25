@@ -50,7 +50,7 @@ extends TabularResult
 		File resultFile, File outputDirectory, String taskID, String block
 	) throws NullPointerException, IllegalArgumentException, IOException {
 		super.init(resultFile, outputDirectory, taskID, block);
-		// get temp directory root
+		// get temp directory
 		File tempDir = new File("temp");
 		tempDir.mkdirs();
 		// determine base filename of both SQL commands file
