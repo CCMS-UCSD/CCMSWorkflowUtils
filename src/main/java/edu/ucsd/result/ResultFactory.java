@@ -255,7 +255,7 @@ public class ResultFactory
 	private static Class<Result> getResultClass(String type) {
 		if (type == null)
 			return null;
-		String className = "edu.ucsd.livesearch.result.parsers." +
+		String className = "edu.ucsd.result.parsers." +
 			Character.toUpperCase(type.charAt(0)) + type.substring(1) +
 			"Result";
 		Class<Result> resultClass = null;
@@ -316,7 +316,7 @@ public class ResultFactory
 	private static ResultProcessor getProcessorInstance(String type) {
 		if (type == null)
 			return null;
-		String className = "edu.ucsd.livesearch.result.processors." +
+		String className = "edu.ucsd.result.processors." +
 			Character.toUpperCase(type.charAt(0)) + type.substring(1) +
 			"Processor";
 		Class<ResultProcessor> processorClass = null;
