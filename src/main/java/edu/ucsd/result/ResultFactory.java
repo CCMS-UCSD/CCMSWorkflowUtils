@@ -282,8 +282,8 @@ public class ResultFactory
 		Result result = null;
 		try {
 			result = resultClass.getConstructor(
-				File.class, String.class, String.class).newInstance(
-				file, taskID, block);
+				File.class, File.class, String.class, String.class).newInstance(
+				file, outputDirectory, taskID, block);
 		} catch (Throwable error) {
 			logger.error("Error instantiating result class", error);
 			return null;
@@ -304,7 +304,8 @@ public class ResultFactory
 		Result result = null;
 		try {
 			result = resultClass.getConstructor(
-				Result.class, String.class).newInstance(previous, block);
+				Result.class, File.class, String.class).newInstance(
+				previous, outputDirectory, block);
 		} catch (Throwable error) {
 			logger.error("Error instantiating result class", error);
 			return null;
