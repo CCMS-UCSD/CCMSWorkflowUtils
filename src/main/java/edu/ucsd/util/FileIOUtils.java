@@ -4,12 +4,17 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,9 +28,15 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.xpath.XPathAPI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.unix4j.Unix4j;
+import org.unix4j.unix.Grep;
+import org.unix4j.unix.cut.CutOption;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import edu.ucsd.saint.commons.Helpers;
@@ -56,7 +67,32 @@ public class FileIOUtils
 			}
 			return contents.toString();
 		} catch (IOException error) {
-			throw new IOException(String.format("Error reading file \"%s\"",
+			throw new IOException(String.format("Error reading file [%s]",
+				file.getAbsolutePath()), error);
+		} finally {
+			if (reader != null) try {
+				reader.close();
+			} catch (IOException error) {}
+		}
+	}
+	public static final String readGZIPFile(File file)
+	throws IOException {
+		if (file == null)
+			return null;
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(
+				new GZIPInputStream(new FileInputStream(file))));
+			StringBuffer contents = new StringBuffer();
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				contents.append(line);
+				contents.append("\n");
+			}
+			return contents.toString();
+		} catch (IOException error) {
+			throw new IOException(String.format(
+				"Error reading gzipped file [%s]",
 				file.getAbsolutePath()), error);
 		} finally {
 			if (reader != null) try {
@@ -77,7 +113,7 @@ public class FileIOUtils
 			writer.write(contents);
 			return true;
 		} catch (IOException error) {
-			throw new IOException(String.format("Error writing to file \"%s\"",
+			throw new IOException(String.format("Error writing to file [%s]",
 				file.getAbsolutePath()), error);
 		} finally {
 			if (writer != null) try {
@@ -102,7 +138,7 @@ public class FileIOUtils
 			return true;
 		} catch (IOException error) {
 			throw new IOException(String.format(
-					"Error copying contents of file \"%s\" to file \"%s\"",
+					"Error copying contents of file [%s] to file [%s]",
 					source.getAbsolutePath(), destination.getAbsolutePath()),
 				error);
 		} finally {
@@ -112,6 +148,37 @@ public class FileIOUtils
 			if (writer != null) try {
 				writer.close();
 			} catch (Throwable error) {}
+		}
+	}
+	
+	public static final String getMD5Hash(File file)
+	throws IOException {
+		if (file == null || file.canRead() == false)
+			return null;
+		FileInputStream input = null;
+		try {
+			// read file, compute MD5 digest bytes
+			input = new FileInputStream(file);
+			MessageDigest digest = MessageDigest.getInstance("MD5");
+			byte[] data = new byte[1024];
+			int bytesRead = 0;
+			while ((bytesRead = input.read(data)) != -1)
+				digest.update(data, 0, bytesRead);
+			byte[] digestData = digest.digest();
+			// convert digest bytes to hex string format
+			StringBuffer result = new StringBuffer();
+			for (int i=0; i<digestData.length; i++) {
+				String hex = Integer.toHexString(0xff & digestData[i]);
+	    		if (hex.length() == 1)
+	   	     		result.append("0");
+	   	     	result.append(hex);
+	   	     }
+			return result.toString();
+		} catch (NoSuchAlgorithmException error) {
+			return null;
+		} finally {
+			try { input.close(); }
+			catch (Throwable error) {}
 		}
 	}
 	
@@ -179,6 +246,63 @@ public class FileIOUtils
 			}
 			return result.getWriter().toString();
 		}
+	}
+	
+	public static final NodeList parseXMLNodes(
+		Document document, String xPath
+	) throws IOException {
+		if (document == null || xPath == null || xPath.isEmpty())
+			return null;
+		try {
+			return XPathAPI.selectNodeList(document, xPath);
+		} catch (TransformerException error) {
+			throw new IOException("Error transforming XML", error);
+		}
+	}
+	
+	public static final Integer countNodeOccurrencesInXML(
+		Document document, String xPath
+	) throws IOException {
+		if (document == null)
+			return null;
+		else if (xPath == null || xPath.isEmpty())
+			return 0;
+		NodeList nodes = parseXMLNodes(document, xPath);
+		if (nodes == null)
+			return 0;
+		else return nodes.getLength();
+	}
+	
+	public static final Integer countStringOccurrencesInFile(
+		File file, String pattern
+	) throws IOException {
+		if (file == null || file.isFile() == false || file.canRead() == false)
+			return null;
+		else if (pattern == null || pattern.isEmpty())
+			return 0;
+		String result = Unix4j.grep(Grep.Options.c, pattern, file)
+			.cut(CutOption.fields, ":", 1).toStringResult();
+		try {
+			return Integer.parseInt(result);
+		} catch (NumberFormatException error) {
+			throw new IOException(String.format(
+				"Could not parse grep -c output [%s] as an integer.", result),
+				error);
+		}
+	}
+	
+	public static final Integer countStringOccurrencesInStream(
+		BufferedReader reader, String pattern
+	) throws IOException {
+		if (reader == null)
+			return null;
+		else if (pattern == null || pattern.isEmpty())
+			return 0;
+		int count = 0;
+		String line = null;
+		while ((line = reader.readLine()) != null)
+			count += StringUtils.countMatches(line, pattern);
+		return count;
 	}
 	
 	public static final String getMappedPath(

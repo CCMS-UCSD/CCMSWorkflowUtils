@@ -1,14 +1,14 @@
 package edu.ucsd.workflow;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.security.MessageDigest;
 
 import org.apache.commons.io.FileUtils;
+
+import edu.ucsd.data.ProteoSAFeFile;
 
 public class AnalyzeFile
 {
@@ -55,13 +55,13 @@ public class AnalyzeFile
 		/*====================================================================
 		 * Properties
 		 *====================================================================*/
-		protected File    file = null;
-		protected String  prefix = null;
-		protected int     linkCount = 0;
-		protected int     folderCount = 0;
-		protected int     fileCount = 0;
-		protected long    fileSize = 0;
-		protected boolean verbose = false;
+		protected ProteoSAFeFile file = null;
+		protected String         prefix = null;
+		protected int            linkCount = 0;
+		protected int            folderCount = 0;
+		protected int            fileCount = 0;
+		protected long           fileSize = 0;
+		protected boolean        verbose = false;
 	}
 	
 	/*========================================================================
@@ -81,7 +81,7 @@ public class AnalyzeFile
 				return null;
 			if (argument.equals("-verbose"))
 				stats.verbose = true;
-			else stats.file = new File(argument);
+			else stats.file = new ProteoSAFeFile(argument);
 		}
 		// verify specified file
 		if (stats.file == null)
@@ -97,7 +97,7 @@ public class AnalyzeFile
 	}
 	
 	private static String analyze(
-		FileAnalysis stats, File file, String prefix
+		FileAnalysis stats, ProteoSAFeFile file, String prefix
 	) throws IOException {
 		if (file == null) {
 			die("Analyzing argument file: file is null!");
@@ -113,10 +113,15 @@ public class AnalyzeFile
 			stats.fileCount++;
 			stats.fileSize += size;
 			if (stats.verbose) {
-				long checksum = FileUtils.checksumCRC32(file);
-				String hash = getMD5Hash(file);
-				return String.format("%s, CRC32 checksum = %d, MD5 hash = %s",
-					fileDetails, checksum, hash);
+				Long checksum = file.getChecksum();
+				String hash = file.getHash();
+				Integer spectra = file.getSpectra();
+				return String.format(
+					"%s, CRC32 checksum = %s, MD5 hash = %s, spectra = %s",
+					fileDetails,
+					checksum != null ? Long.toString(checksum) : "null",
+					hash != null ? hash : "null",
+					spectra != null ? Integer.toString(spectra) : "null");
 			} else return fileDetails;
 		} else if (file.isDirectory()) {
 			StringBuilder contents = new StringBuilder(file.getPath());
@@ -132,7 +137,8 @@ public class AnalyzeFile
 			if (children != null && children.length > 0) {
 				for (File child : file.listFiles()) {
 					contents.append(thisPrefix);
-					contents.append(analyze(stats, child, nextPrefix));
+					contents.append(
+						analyze(stats, new ProteoSAFeFile(child), nextPrefix));
 					contents.append("\n");
 				}
 			}
@@ -146,36 +152,6 @@ public class AnalyzeFile
 				"Analyzing argument file [%s]: unrecognized file type.",
 				file.getAbsolutePath()));
 			return null;
-		}
-	}
-	
-	private static String getMD5Hash(File file) {
-		if (file == null || file.canRead() == false)
-			return null;
-		FileInputStream input = null;
-		try {
-			// read file, compute MD5 digest bytes
-			input = new FileInputStream(file);
-			MessageDigest digest = MessageDigest.getInstance("MD5");
-			byte[] data = new byte[1024];
-			int bytesRead = 0;
-			while ((bytesRead = input.read(data)) != -1)
-				digest.update(data, 0, bytesRead);
-			byte[] digestData = digest.digest();
-			// convert digest bytes to hex string format
-			StringBuffer result = new StringBuffer();
-			for (int i=0; i<digestData.length; i++) {
-				String hex = Integer.toHexString(0xff & digestData[i]);
-	    		if (hex.length() == 1)
-	   	     		result.append("0");
-	   	     	result.append(hex);
-	   	     }
-			return result.toString();
-		} catch (Throwable error) {
-			return null;
-		} finally {
-			try { input.close(); }
-			catch (Throwable error) {}
 		}
 	}
 	

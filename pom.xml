@@ -7,7 +7,7 @@
 	<artifactId>workflow-utils</artifactId>
 	<name>CCMS Workflow Utilities</name>
 	<packaging>jar</packaging>
-	<version>1.2</version>
+	<version>1.3</version>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -152,6 +152,12 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.6</version>
+		</dependency>
+		<!-- Unix-like utilities for Java -->
+		<dependency>
+			<groupId>org.unix4j</groupId>
+			<artifactId>unix4j-command</artifactId>
+			<version>0.4</version>
 		</dependency>
 	</dependencies>
 </project>
