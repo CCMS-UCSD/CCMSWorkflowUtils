@@ -47,15 +47,16 @@ public class RemoveRedundantTSVRows
 				removeRedundantTSVRows.outputFile));
 			// read header
 			String headerStr = input.readLine();
-			String[] header = headerStr.trim().split("\t");
+			List<String> header = new ArrayList<String>(
+				Arrays.asList(headerStr.trim().split("\t")));
 			String columnsStr = "";
-			Set<List<String>> uniqueLineIDs = new HashSet<>();
-			for (int i=0; i<header.length; i++) {
-				header[i] = header[i].trim();
+			Set<List<String>> uniqueLineIDs = new HashSet<List<String>>();
+			for (int i=0; i<header.size(); i++) {
+				header.set(i, header.get(i).trim());
 			}
-			for (int i=0; i<removeRedundantTSVRows.columns.length; i++) {
-				String column = removeRedundantTSVRows.columns[i];
-				if (!(Arrays.asList(header).contains(column))) {
+			for (int i=0; i<removeRedundantTSVRows.columns.size(); i++) {
+				String column = removeRedundantTSVRows.columns.get(i);
+				if (header.contains(column) == false) {
 					throw new IllegalArgumentException(
 						String.format("Column \"%s\" was not found in input header.",
 						column));
@@ -73,14 +74,14 @@ public class RemoveRedundantTSVRows
 			while ((lineStr = input.readLine()) != null) {
 				linesInInputFile++;
 				String[] line = lineStr.trim().split("\t");
-				List<String> uniqueLineID = new ArrayList<>();
+				List<String> uniqueLineID = new ArrayList<String>();
 				for (int i=0; i<line.length; i++) {
-					if (Arrays.asList(removeRedundantTSVRows.columns).contains(
-						header[i])) {
+					if (removeRedundantTSVRows.columns.contains(
+						header.get(i))) {
 						uniqueLineID.add(line[i]);
 					}
 				}
-				if (!(uniqueLineIDs.contains(uniqueLineID))) {
+				if (uniqueLineIDs.contains(uniqueLineID) == false) {
 					linesInOutputFile++;
 					output.println(lineStr);
 					uniqueLineIDs.add(uniqueLineID);
@@ -122,13 +123,13 @@ public class RemoveRedundantTSVRows
 		 *====================================================================*/
 		private File inputFile;
 		private File outputFile;
-		private String[] columns;
+		private List<String> columns;
 		
 		/*====================================================================
 		 * Constructors
 		 *====================================================================*/
 		public RemoveRedundantTSVRowsOperation(
-			File inputFile, File outputFile, String[] columns
+			File inputFile, File outputFile, List<String> columns
 		) throws IOException {
 			// validate input file
 			if (inputFile == null)
@@ -171,7 +172,7 @@ public class RemoveRedundantTSVRows
 			return null;
 		File inputFile = null;
 		File outputFile = null;
-		String[] columns = null;
+		List<String> columns = null;
 		for (int i=0; i<args.length; i++) {
 			String argument = args[i];
 			if (argument == null)
@@ -186,9 +187,10 @@ public class RemoveRedundantTSVRows
 				else if (argument.equals("-output"))
 					outputFile = new File(value);
 				else if (argument.equals("-columns")) {
-					columns = value.split(",");
-					for (int j=0; j<columns.length; j++) {
-						columns[j] = columns[j].trim();
+					columns = new ArrayList<String>(
+						Arrays.asList(value.trim().split(",")));
+					for (int j=0; j<columns.size(); j++) {
+						columns.set(j, columns.get(j).trim());
 					}
 				}
 				else return null;
