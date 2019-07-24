@@ -2,14 +2,11 @@ package edu.ucsd.workflow;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
+import edu.ucsd.data.ProteoSAFeFileMappingContext;
 import edu.ucsd.util.CommonUtils;
 import edu.ucsd.util.FileIOUtils;
 
@@ -47,8 +44,7 @@ public class CopyCollection
 			// otherwise, copy each file from the source directory to the
 			// destination directory, preserving original file paths
 			else for (File source : copy.sourceDirectory.listFiles()) {
-				String path =
-					FileIOUtils.getMappedPath(source.getName(), copy.filenames);
+				String path = copy.context.getMappedPath(source.getName());
 				File destination = new File(copy.destinationDirectory, path);
 				FileUtils.copyFile(source, destination);
 			}
@@ -67,10 +63,10 @@ public class CopyCollection
 		/*====================================================================
 		 * Properties
 		 *====================================================================*/
-		private Map<String, String> filenames;
-		private File                sourceDirectory;
-		private File                destinationDirectory;
-		private boolean             preservePaths;
+		private ProteoSAFeFileMappingContext context;
+		private File                         sourceDirectory;
+		private File                         destinationDirectory;
+		private boolean                      preservePaths;
 		
 		/*====================================================================
 		 * Constructors
@@ -126,37 +122,20 @@ public class CopyCollection
 					throw new IllegalArgumentException(String.format(
 						"Parameters file [%s] must be readable.",
 						parameters.getName()));
-				// read XML document from params file
+				// read XML document from params.xml file
 				Document document = FileIOUtils.parseXML(parameters);
 				if (document == null)
 					throw new NullPointerException(
 						"Parameters XML document could not be parsed.");
-				// generate mappings for all submitted filenames
+				// generate mapping context from params.xml
 				try {
-					NodeList mappings = XPathAPI.selectNodeList(
-						document, "//parameter[@name='upload_file_mapping']");
-					filenames =
-						new LinkedHashMap<String, String>(mappings.getLength());
-					if (mappings != null && mappings.getLength() > 0) {
-						for (int i=0; i<mappings.getLength(); i++) {
-							String value =
-								mappings.item(i).getFirstChild().getNodeValue();
-							String[] tokens = value.split("\\|");
-							if (tokens == null || tokens.length != 2)
-								throw new IllegalArgumentException(
-									String.format("\"upload_file_mapping\" " +
-									"parameter value \"%s\" is invalid - it " +
-									"should contain two tokens separated by " +
-									"a pipe (\"|\") character.", value));
-							filenames.put(tokens[0], tokens[1]);
-						}
-					}
+					context = new ProteoSAFeFileMappingContext(document);
 				} catch (RuntimeException error) {
 					throw error;
 				} catch (Throwable error) {
 					throw new RuntimeException(error);
 				}
-			} else filenames = null;
+			} else context = null;
 		}
 	}
 	

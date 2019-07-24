@@ -2,15 +2,13 @@ package edu.ucsd.workflow;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.xpath.XPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
+import edu.ucsd.data.ProteoSAFeFileMappingContext;
 import edu.ucsd.util.FileIOUtils;
 
 public class CopyCollectionToUserSpace
@@ -36,8 +34,7 @@ public class CopyCollectionToUserSpace
 		// to the destination directory, preserving original file paths
 		try {
 			for (File source : copy.sourceDirectory.listFiles()) {
-				String path =
-					FileIOUtils.getMappedPath(source.getName(), copy.filenames);
+				String path = copy.context.getMappedPath(source.getName());
 				File destination = new File(copy.destinationDirectory, path);
 				FileUtils.copyFile(source, destination);
 			}
@@ -57,9 +54,9 @@ public class CopyCollectionToUserSpace
 		/*====================================================================
 		 * Properties
 		 *====================================================================*/
-		private Map<String, String> filenames;
-		private File                sourceDirectory;
-		private File                destinationDirectory;
+		private ProteoSAFeFileMappingContext context;
+		private File                         sourceDirectory;
+		private File                         destinationDirectory;
 		
 		/*====================================================================
 		 * Constructors
@@ -95,25 +92,10 @@ public class CopyCollectionToUserSpace
 						"A \"user\" parameter could not be found " +
 						"in the parsed parameters XML document.");
 				else user = parameter.getFirstChild().getNodeValue();
-				// generate mappings for all submitted filenames
-				NodeList mappings = XPathAPI.selectNodeList(
-					document, "//parameter[@name='upload_file_mapping']");
-				filenames =
-					new LinkedHashMap<String, String>(mappings.getLength());
-				if (mappings != null && mappings.getLength() > 0) {
-					for (int i=0; i<mappings.getLength(); i++) {
-						String value =
-							mappings.item(i).getFirstChild().getNodeValue();
-						String[] tokens = value.split("\\|");
-						if (tokens == null || tokens.length != 2)
-							throw new IllegalArgumentException(String.format(
-								"\"upload_file_mapping\" parameter value " +
-								"\"%s\" is invalid - it should contain two " +
-								"tokens separated by a pipe (\"|\") character.",
-								value));
-						filenames.put(tokens[0], tokens[1]);
-					}
-				}
+				// generate mapping context from params.xml
+				context = new ProteoSAFeFileMappingContext(document);
+			} catch (RuntimeException error) {
+				throw error;
 			} catch (Throwable error) {
 				throw new RuntimeException(error);
 			}
