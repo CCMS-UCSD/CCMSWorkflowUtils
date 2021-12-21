@@ -11,8 +11,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-
 import edu.ucsd.util.FileIOUtils;
 
 public class MergeRectangular
@@ -56,8 +54,7 @@ public class MergeRectangular
 						"Input file [%s] is not readable.",
 						inputFile.getAbsolutePath()));
 				// determine this file's delimiter
-				String delimiter = StringEscapeUtils.escapeJava(
-					Character.toString(FileIOUtils.determineDelimiter(inputFile)));
+				char delimiter = FileIOUtils.determineDelimiter(inputFile);
 				// read the header line and note all of its columns
 				input = new BufferedReader(new FileReader(inputFile));
 				String line = input.readLine();
@@ -66,7 +63,7 @@ public class MergeRectangular
 						"Error merging input file [%s]: the file must contain " +
 						"a valid header line consisting of one or more non-empty " +
 						"field names.", inputFile.getAbsolutePath()));
-				for (String column : line.split(delimiter))
+				for (String column : FileIOUtils.splitByDelimiter(line, delimiter))
 					finalHeader.add(column);
 				input.close();
 				continue;
@@ -108,8 +105,7 @@ public class MergeRectangular
 					(filesMerged + 1), inputFile.getName(),
 					inputFile.length()));
 				// determine this file's delimiter
-				String delimiter = StringEscapeUtils.escapeJava(
-					Character.toString(FileIOUtils.determineDelimiter(inputFile)));
+				char delimiter = FileIOUtils.determineDelimiter(inputFile);
 				// read the first line, record it as this file's header
 				input = new BufferedReader(new FileReader(inputFile));
 				String line = input.readLine();
@@ -118,7 +114,7 @@ public class MergeRectangular
 						"Error merging input file [%s]: the file must contain " +
 						"a valid header line consisting of one or more non-empty " +
 						"field names.", inputFile.getAbsolutePath()));
-				String[] header = line.split(delimiter);
+				String[] header = FileIOUtils.splitByDelimiter(line, delimiter);
 				// read the remaining lines, normalize them,
 				// and write them to the output file
 				int lineNumber = 2;
@@ -126,7 +122,7 @@ public class MergeRectangular
 					line = input.readLine();
 					if (line == null)
 						break;
-					String[] row = line.split(delimiter);
+					String[] row = FileIOUtils.splitByDelimiter(line, delimiter);
 					if (row == null || row.length != header.length)
 						throw new IllegalArgumentException(String.format(
 							"Error merging input file [%s]: line %d contains a " +
