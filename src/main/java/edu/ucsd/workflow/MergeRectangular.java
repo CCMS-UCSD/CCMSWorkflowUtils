@@ -13,6 +13,8 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 
+import edu.ucsd.util.FileIOUtils;
+
 public class MergeRectangular
 {
 	/*========================================================================
@@ -22,12 +24,8 @@ public class MergeRectangular
 		"java -cp CCMSWorkflowUtils.jar edu.ucsd.workflow.MergeRectangular" +
 		"\n\t-input <InputDirectory>" +
 		"\n\t-output <OutputFile>";
-	// TODO: either allow this to be configurable or attempt
-	// to determine it automatically, so that other common
-	// delimiters (e.g. comma) can be supported
-	private static final char DELIMITER = '\t';
-	private static final String ESCAPED_DELIMITER =
-		StringEscapeUtils.escapeJava(Character.toString(DELIMITER));
+	// TODO: allow this to be configurable
+	private static final char WRITE_DELIMITER = '\t';
 	private static final String MISSING_COLUMN_VALUE = "N/A";
 	
 	/*========================================================================
@@ -57,15 +55,18 @@ public class MergeRectangular
 					throw new IOException(String.format(
 						"Input file [%s] is not readable.",
 						inputFile.getAbsolutePath()));
-				input = new BufferedReader(new FileReader(inputFile));
+				// determine this file's delimiter
+				String delimiter = StringEscapeUtils.escapeJava(
+					Character.toString(FileIOUtils.determineDelimiter(inputFile)));
 				// read the header line and note all of its columns
+				input = new BufferedReader(new FileReader(inputFile));
 				String line = input.readLine();
 				if (line == null || line.trim().isEmpty())
 					throw new IllegalArgumentException(String.format(
 						"Error merging input file [%s]: the file must contain " +
 						"a valid header line consisting of one or more non-empty " +
 						"field names.", inputFile.getAbsolutePath()));
-				for (String column : line.split(ESCAPED_DELIMITER))
+				for (String column : line.split(delimiter))
 					finalHeader.add(column);
 				input.close();
 				continue;
@@ -106,15 +107,18 @@ public class MergeRectangular
 					"\t%3d. Input file [%s] - size %,d bytes...",
 					(filesMerged + 1), inputFile.getName(),
 					inputFile.length()));
-				input = new BufferedReader(new FileReader(inputFile));
+				// determine this file's delimiter
+				String delimiter = StringEscapeUtils.escapeJava(
+					Character.toString(FileIOUtils.determineDelimiter(inputFile)));
 				// read the first line, record it as this file's header
+				input = new BufferedReader(new FileReader(inputFile));
 				String line = input.readLine();
 				if (line == null || line.trim().isEmpty())
 					throw new IllegalArgumentException(String.format(
 						"Error merging input file [%s]: the file must contain " +
 						"a valid header line consisting of one or more non-empty " +
 						"field names.", inputFile.getAbsolutePath()));
-				String[] header = line.split(ESCAPED_DELIMITER);
+				String[] header = line.split(delimiter);
 				// read the remaining lines, normalize them,
 				// and write them to the output file
 				int lineNumber = 2;
@@ -122,7 +126,7 @@ public class MergeRectangular
 					line = input.readLine();
 					if (line == null)
 						break;
-					String[] row = line.split(ESCAPED_DELIMITER);
+					String[] row = line.split(delimiter);
 					if (row == null || row.length != header.length)
 						throw new IllegalArgumentException(String.format(
 							"Error merging input file [%s]: line %d contains a " +
@@ -258,10 +262,10 @@ public class MergeRectangular
 			return null;
 		StringBuilder serialized = new StringBuilder();
 		for (String cell : row)
-			serialized.append(cell).append(DELIMITER);
+			serialized.append(cell).append(WRITE_DELIMITER);
 		// chomp trailing delimiter
 		if (serialized.length() > 0 &&
-			serialized.charAt(serialized.length() - 1) == DELIMITER)
+			serialized.charAt(serialized.length() - 1) == WRITE_DELIMITER)
 			serialized.setLength(serialized.length() - 1);
 		return serialized.toString();
 	}
