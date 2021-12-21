@@ -13,6 +13,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -47,6 +50,12 @@ public class FileIOUtils
 	 *========================================================================*/
 	private static final Logger logger =
 		LoggerFactory.getLogger(FileIOUtils.class);
+    private static final String[] SUPPORTED_EXTENSIONS = new String[]{
+        "tsv", "csv", "txt", "xls"
+    };
+    private static final char[] SUPPORTED_DELIMITERS = new char[]{
+        '\t', ','
+    };
 	
 	/*========================================================================
 	 * Public interface methods
@@ -303,7 +312,182 @@ public class FileIOUtils
 			count += StringUtils.countMatches(line, pattern);
 		return count;
 	}
-	
+
+    public static String[] splitByDelimiter(String line, char delimiter)
+    throws IllegalStateException {
+        if (line == null)
+            return null;
+        // iterate over line, collecting each token with
+        // proper care taken for any quoted strings found
+        boolean inQuotes = false;
+        Character quote = null;
+        StringBuilder token = new StringBuilder();
+        Collection<String> tokens = new ArrayList<String>();
+        for (int i=0; i<line.length(); i++) {
+            char current = line.charAt(i);
+            // currently working through a quoted token
+            if (inQuotes) {
+                // if we've reached the end of this token, close it out
+                if (current == quote) {
+                    // either this is the last character in the line,
+                    // or the next character had better be the delimiter
+                    if ((i+1) < line.length()) {
+                         char next = line.charAt(i+1);
+                         if (next != delimiter)
+                            throw new IllegalStateException(String.format(
+                                "Found a closing quotation mark (%c) at " +
+                                "position %d in line:" +
+                                "\n----------\n%s\n----------\n" +
+                                "yet the next character (%c) is " +
+                                "not the indicated delimiter (%c).",
+                                quote, i, line, next, delimiter));
+                    }
+                    inQuotes = false;
+                    quote = null;
+                }
+                // otherwise, add the character to
+                // the current token and keep going
+                else token.append(current);
+            }
+            // not working through any quoted token
+            else {
+                // if this is an un-quoted delimiter, add the previous token
+                if (current == delimiter) {
+                    tokens.add(token.toString());
+                    token = new StringBuilder();
+                }
+                // handle quotes properly
+                else if (current == '\'' || current == '"') {
+                    // if the current token is empty, then this
+                    // quotation mark is an opening quote; note
+                    // it and proceed through the quoted token
+                    if (token.length() == 0) {
+                        inQuotes = true;
+                        quote = current;
+                    }
+                    // otherwise, this quotation mark is in the middle of
+                    // the token and is therefore not an opening quote;
+                    // just add it to the token like any other character
+                    else token.append(current);
+                }
+                // otherwise, add the character to
+                // the current token and keep going
+                else token.append(current);
+            }
+        }
+        // the line should not end in the middle of a quoted token
+        if (inQuotes)
+            throw new IllegalStateException(String.format(
+                "The final token [%s] of line:" +
+                "\n----------\n%s\n----------\n" +
+                "began with a quotation mark that was never closed.",
+                token.toString(), line));
+        // be sure to add whatever was found last
+        tokens.add(token.toString());
+        return tokens.toArray(new String[tokens.size()]);
+    }
+
+    public static boolean isDelimitedBy(File file, char delimiter)
+    throws IOException {
+        if (file == null || file.isFile() == false || file.canRead() == false)
+            return false;
+        // read through file, check each line for token length
+        // consistency when split by the specified delimiter
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(file));
+            // set up test variables
+            Integer fields = null;
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                String[] tokens = splitByDelimiter(line, delimiter);
+                // if there was a problem reading this line, then return false;
+                // the parsed row should contain at least two elements,
+                // since a parse with the wrong delimiter is expected
+                // to produce exactly one
+                if (tokens == null || tokens.length < 2)
+                    return false;
+                // if this is the first line parsed, record its number of tokens
+                else if (fields == null)
+                    fields = tokens.length;
+                // if this is not the first line parsed, and its number
+                // of tokens differs from that found in previous lines,
+                // then this is not the file's tabular delimiter
+                else if (fields != tokens.length)
+                    return false;
+            }
+            // if we got through all lines of the file and they all had
+            // consistent token lengths when split by the specified
+            // delimiter, then this is the correct delimiter for this file
+            return true;
+        }
+        // if an IllegalStateException exception was thrown, then we can be
+        // sure that this file is not delimited by the indicated character
+        catch (IllegalStateException error) {
+            return false;
+        } finally {
+            try { reader.close(); } catch (Throwable error) {}
+        }
+    }
+
+    public static Character determineDelimiter(File file)
+    throws IOException {
+        if (file == null)
+            return null;
+        else if (file.isFile() == false || file.canRead() == false)
+            throw new IllegalArgumentException(
+                "File must be a readable regular file.");
+        // check file for consistency with all common delimiters
+        for (char delimiter : SUPPORTED_DELIMITERS)
+            if (isDelimitedBy(file, delimiter))
+                return delimiter;
+        // if no delimiter could be found, then the file cannot be parsed
+        return null;
+    }
+
+    public static Character getParseableDelimiter(File file) {
+        if (file == null)
+            return null;
+        try {
+            // only consider files of a supported type
+            String thisExtension = FilenameUtils.getExtension(file.getName());
+            if (thisExtension == null || thisExtension.trim().isEmpty())
+                return null;
+            boolean supported = false;
+            for (String extension : SUPPORTED_EXTENSIONS) {
+                if (thisExtension.equalsIgnoreCase(extension)) {
+                    supported = true;
+                    break;
+                }
+            }
+            // if this file can be fully parsed with
+            // a common delimiter then it's parseable
+            if (supported)
+                return determineDelimiter(file);
+            else return null;
+        } catch (RuntimeException error) {
+            throw error;
+        } catch (Throwable error) {
+            throw new RuntimeException(error);
+        }
+    }
+
+    public static boolean isParseable(File file) {
+        return getParseableDelimiter(file) != null;
+    }
+
+    public static Collection<File> findParseableFiles(Collection<File> files) {
+        if (files == null || files.isEmpty())
+            return null;
+        Collection<File> parseable = new LinkedHashSet<File>(files.size());
+        for (File file : files)
+            if (isParseable(file))
+                parseable.add(file);
+        if (parseable.isEmpty())
+            return null;
+        else return parseable;
+    }
+
 	public static final String changeExtension(
 		String filename, String extension
 	) {
