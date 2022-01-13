@@ -15,7 +15,7 @@
 		<repository>
 			<id>internal</id>
 			<name>Maven 2 Internal Repository</name>
-			<url>http://ccms-support.ucsd.edu/maven2</url>
+			<url>https://ccms-support.ucsd.edu/maven2</url>
 		</repository>
 	</repositories>
 	<pluginRepositories>
