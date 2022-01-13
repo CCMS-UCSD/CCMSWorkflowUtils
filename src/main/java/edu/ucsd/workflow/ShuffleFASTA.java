@@ -69,7 +69,6 @@ public class ShuffleFASTA
 					if (
 						sequence != null && sequence.length() > 0 &&
 						(!prevProteinIsDecoy)
-
 					) {
 						writeReversedSequence(sequence, output);
 					}
