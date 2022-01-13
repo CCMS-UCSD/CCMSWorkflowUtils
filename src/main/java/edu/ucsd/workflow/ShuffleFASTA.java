@@ -45,27 +45,41 @@ public class ShuffleFASTA
 			// read and reverse sequences one by one from input file
 			String line = null;
 			StringBuffer sequence = null;
+			// If sequence is already reversed, don't write the reversed
+			// version of that
+			boolean prevProteinIsDecoy = false;
 			while (true) {
 				line = input.readLine();
 				if (line == null) {
 					// if a previous sequence is still being processed,
 					// reverse it and write it to the output file
-					if (sequence != null && sequence.length() > 0)
+					if (
+						sequence != null && sequence.length() > 0 &&
+						(!prevProteinIsDecoy)
+					) {
 						writeReversedSequence(sequence, output);
+					}
 					break;
 				} else if (line.startsWith(">")) {
 					// process the FASTA comment line to
 					// insert the proper decoy prefix
 					line = line.substring(1).trim();
-					line = ">" + DECOY_PREFIX + "_" + line;
 					// if a previous sequence is still being processed,
 					// reverse it and write it to the output file
-					if (sequence != null && sequence.length() > 0)
+					if (
+						sequence != null && sequence.length() > 0 &&
+						(!prevProteinIsDecoy)
+					) {
 						writeReversedSequence(sequence, output);
+					}
+					prevProteinIsDecoy = line.startsWith(DECOY_PREFIX);
+					line = ">" + DECOY_PREFIX + "_" + line;
 					// start a new sequence
 					sequence = new StringBuffer();
 					// write new comment line to output file
-					output.println(line);
+					if (!prevProteinIsDecoy) {
+						output.println(line);
+					}
 				} else if (line.trim().equals("") == false) {
 					if (sequence == null)
 						die("Bad FASTA file: sequence text encountered " +
