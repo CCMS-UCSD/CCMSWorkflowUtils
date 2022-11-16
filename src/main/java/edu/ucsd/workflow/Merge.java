@@ -16,8 +16,11 @@ public class Merge
 		"\n\t-input <InputDirectory>" +
 		"\n\t-output <OutputFile>" +
 		"\n\t[-header] (if specified, the tool will assume that there is a " +
-		"header line that needs to be stripped from all files after the first)";
-	
+		"header line that needs to be stripped from all files after the " +
+		"first)" +
+		"\n\t[-removeStartBlankLines] (if specified, the tool will remove " +
+		"blank lines at the beginning of the file)";
+		
 	/*========================================================================
 	 * Public interface methods
 	 *========================================================================*/
@@ -51,9 +54,15 @@ public class Merge
 					(filesMerged + 1), inputFile.getName(),
 					inputFile.length()));
 				input = new BufferedReader(new FileReader(inputFile));
+				String line = input.readLine();
+				// bypass the blank lines at the beginning of the file if
+				// the removeStartBlankLines option was specified
+				if (merge.removeStartBlankLines == true) {
+					while (line != null && line.trim().isEmpty())
+						line = input.readLine();
+				}
 				// read the first line, and if it's expected
 				// to be a header, handle it appropriately
-				String line = input.readLine();
 				if (merge.header == false || first)
 					output.println(line);
 				// read the remaining lines, and write them to the output file
@@ -116,12 +125,14 @@ public class Merge
 		private File inputDirectory;
 		private File outputFile;
 		private boolean header;
+		private boolean removeStartBlankLines;
 		
 		/*====================================================================
 		 * Constructors
 		 *====================================================================*/
 		public MergeOperation(
-			File inputDirectory, File outputFile, boolean header
+			File inputDirectory, File outputFile, boolean header,
+			boolean removeStartBlankLines
 		) throws IOException {
 			// validate input directory
 			if (inputDirectory == null)
@@ -153,6 +164,7 @@ public class Merge
 						outputFile.getAbsolutePath()));
 			// set header status
 			this.header = header;
+			this.removeStartBlankLines = removeStartBlankLines;
 		}
 	}
 	
@@ -165,12 +177,15 @@ public class Merge
 		File inputDirectory = null;
 		File outputFile = null;
 		boolean header = false;
+		boolean removeStartBlankLines = false;
 		for (int i=0; i<args.length; i++) {
 			String argument = args[i];
 			if (argument == null)
 				return null;
 			else if (argument.equals("-header"))
 				header = true;
+			else if (argument.equals("-removeStartBlankLines"))
+				removeStartBlankLines = true;
 			else {
 				i++;
 				if (i >= args.length)
@@ -184,7 +199,8 @@ public class Merge
 			}
 		}
 		try {
-			return new MergeOperation(inputDirectory, outputFile, header);
+			return new MergeOperation(inputDirectory, outputFile, header,
+				removeStartBlankLines);
 		} catch (Throwable error) {
 			System.err.println(error.getMessage());
 			return null;
