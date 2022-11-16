@@ -46,6 +46,10 @@ extends File
 	 * Property accessor methods
 	 *========================================================================*/
 	public Integer getSpectra() {
+		return getSpectra(false, true);
+	}
+
+	public Integer getSpectra(boolean grep, boolean stream) {
 		// can only count spectra in a readable file
 		if (isFile() == false || canRead() == false) {
 			spectra = null;
@@ -53,7 +57,7 @@ extends File
 		}
 		// if spectrum count is not known, count them up
 		if (spectra == null) try {
-			spectra = SpectrumFileUtils.countMS2Spectra(this);
+			spectra = SpectrumFileUtils.countMS2Spectra(this, grep, stream);
 		} catch (Throwable error) {}
 		return spectra;
 	}
